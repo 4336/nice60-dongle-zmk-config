@@ -1,0 +1,40 @@
+---
+# nice!60 + nice!nano v2 동글 빌드 설정
+#
+# 빌드 결과물 (4개):
+#   1. nice60_dongle-nice_nano_nrf52840_zmk-zmk.uf2  → nice!nano v2 (동글)에 플래시
+#   2. settings_reset-nice_nano_nrf52840_zmk-zmk.uf2 → 최초 페어링 전 동글에 플래시 (1회)
+#   3. settings_reset-nice60_zmk-zmk.uf2             → 최초 페어링 전 nice!60에 플래시 (1회)
+#   4. nice60_zmk-zmk.uf2                            → nice!60 (peripheral)에 플래시
+#
+# 플래시 순서:
+#   Step 1: 동글에 settings_reset 플래시 → 자동 재부팅
+#   Step 2: nice!60에 settings_reset 플래시 (기존 standalone 설정 제거)
+#   Step 3: 동글에 nice60_dongle 펌웨어 플래시
+#   Step 4: nice!60에 nice60 peripheral 펌웨어 플래시
+#   Step 5: 동글을 USB에 꽂으면 자동 페어링됨
+#
+# ※ Zephyr 4.1 이후 nice!nano v2 (nRF52840)는 "nice_nano/nrf52840/zmk" 으로 지정
+#   (기존 "nice_nano_v2//zmk" 는 더 이상 유효하지 않음)
+
+include:
+  # ── 동글 (Central) ─────────────────────────────────────────
+  # nice!nano v2 (nRF52840) — board/soc/qualifier 형식
+  # 키보드 이름: "nice!60", USB HID + BLE 출력 지원
+  - board: nice_nano/nrf52840/zmk
+    shield: nice60_dongle
+
+  # ── 초기 페어링 리셋 (최초 1회 또는 재페어링 시) ──────────
+  # 동글의 기존 페어링 정보를 초기화
+  - board: nice_nano/nrf52840/zmk
+    shield: settings_reset
+
+  # nice!60 본체의 기존 standalone/central 페어링 정보를 초기화
+  - board: nice60//zmk
+    shield: settings_reset
+
+  # ── nice!60 (Peripheral) ────────────────────────────────────
+  # 모든 키 스위치 담당 / BLE로 동글에 키 이벤트 전송
+  # cmake-args로 split peripheral 역할 강제 설정
+  - board: nice60//zmk
+    cmake-args: -DCONFIG_ZMK_SPLIT=y -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
